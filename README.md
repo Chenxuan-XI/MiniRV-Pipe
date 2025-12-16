@@ -92,6 +92,41 @@ The write-back value is selected between the ALU result and memory data.
 - Result selection (ALU vs memory)
 - Register file write-back
 
+### Pipeline Diagram Explanation
+
+The diagram illustrates the simplified 5-stage pipeline organization of MiniRV-Pipe.
+Only the essential data paths and pipeline registers are shown, while complex control
+logic (e.g., branch handling) is intentionally omitted.
+
+Each pipeline stage is isolated by an explicit pipeline register, ensuring clear
+separation of responsibilities and enabling straightforward timing analysis.
+
+**Stage-level data flow overview:**
+
+- **IF (Instruction Fetch)**  
+  Fetches instructions sequentially from instruction ROM using the program counter (PC).
+  The PC is updated by a fixed increment (PC + 4).
+
+- **ID (Instruction Decode)**  
+  Decodes instruction fields and reads source operands from the register file.
+  Immediate values are generated in this stage and forwarded to execution.
+
+- **EX (Execute)**  
+  Performs ALU operations and effective address calculation for memory instructions.
+  This stage also resolves data hazards using forwarding paths from later pipeline stages.
+
+- **MEM (Memory Access)**  
+  Interfaces with data memory for load and store instructions.
+  ALU-only instructions bypass memory access without side effects.
+
+- **WB (Write Back)**  
+  Writes results back to the architectural register file.
+  The write-back value is selected between the ALU result and memory read data.
+
+The diagram highlights how instruction data and control information flow strictly
+forward through the pipeline, while forwarding paths allow recently computed results
+to be reused without stalling whenever possible.
+
 ## Instruction Set
 
 ## Hazard Handling Strategy
