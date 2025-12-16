@@ -131,6 +131,38 @@ forward through the pipeline, while forwarding paths allow recently computed res
 to be reused without stalling whenever possible.
 
 ## Instruction Set
+### Supported Instructions
+
+MiniRV-Pipe implements a minimal RV-inspired instruction set focused on arithmetic
+and memory operations. The supported instructions are summarized below:
+
+| Instruction | Type | Description                |
+|-------------|------|----------------------------|
+| ADD         | R    | rd = rs1 + rs2             |
+| SUB         | R    | rd = rs1 - rs2             |
+| AND         | R    | rd = rs1 & rs2             |
+| LOAD        | I    | rd = MEM[rs1 + imm]        |
+| STORE       | S    | MEM[rs1 + imm] = rs2       |
+
+---
+
+### Instruction Format
+
+All instructions are encoded using a fixed 32-bit format. The bit fields are defined
+as follows:
+[31:28] opcode
+[27:23] rd
+[22:18] rs1
+[17:13] rs2
+[12:0] imm
+
+- `opcode` specifies the instruction operation type.
+- `rd` is the destination register index.
+- `rs1` and `rs2` are source register indices.
+- `imm` is a sign-extended immediate value used by memory instructions.
+
+For R-type instructions, the `imm` field is ignored.  
+For LOAD and STORE instructions, `imm` is used for effective address calculation.
 
 ## Hazard Handling Strategy
 
