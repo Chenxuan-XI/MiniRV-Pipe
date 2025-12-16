@@ -92,6 +92,9 @@ The write-back value is selected between the ALU result and memory data.
 - Result selection (ALU vs memory)
 - Register file write-back
 
+---
+
+![MiniRV Pipeline](docs/minirv_pipeline.png)
 ### Pipeline Diagram Explanation
 
 The diagram illustrates the simplified 5-stage pipeline organization of MiniRV-Pipe.
