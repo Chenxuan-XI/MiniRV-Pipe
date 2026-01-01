@@ -3,8 +3,102 @@ A lightweight instruction-driven FPGA pipeline inspired by RISC-V
 ## Project Motivation
 
 ## Project Development Stage
-### monolithic CPU
-First stage of this project
+
+This project is developed incrementally, with each stage focusing on a clear architectural goal. The emphasis is on **micro-architecture understanding, clean pipeline design, and FPGA-oriented engineering trade-offs**, rather than ISA completeness.
+
+---
+
+### Stage 0 — Monolithic CPU (Concept & Exploration)
+
+The initial stage focused on understanding the complete instruction execution flow in a **monolithic (non-pipelined) CPU architecture**.
+Rather than targeting performance, this stage aimed to clarify how instructions move through fetch, decode, execute, memory access, and write-back as a single control flow.
+
+Key outcomes of this stage include:
+
+* Definition of a custom Tiny RV-like instruction format
+* Clear separation of control path and data path
+* Understanding of register file read/write timing
+* Establishing the architectural foundation for pipelining
+
+This stage served as a conceptual baseline and was not intended for FPGA deployment.
+
+---
+
+### Stage 1 — First Pipelined Implementation
+
+This stage transitions the design to a **RISC-V–inspired 5-stage pipeline**:
+
+```
+IF → ID → EX → MEM → WB
+```
+
+The focus is on **clean modular boundaries, explicit pipeline registers, and correct data/control propagation**.
+
+#### Implemented Components
+
+* **Instruction Set Definition**
+
+  * Custom Tiny RV-like ISA with a minimal instruction subset
+  * Explicit instruction field partitioning (opcode, rd, rs1, rs2, imm)
+  * Enumerated opcode and ALU operation types for readability and scalability
+
+* **Instruction Fetch (IF) Stage**
+
+  * Program Counter (PC) register with sequential update (PC + 4)
+  * Instruction ROM preloaded from a hex file
+  * Standalone simulation verified
+
+* **Register File**
+
+  * 32 × 32-bit general-purpose registers
+  * Dual-read, single-write architecture
+  * Register x0 hardwired to zero
+  * Parameterized synchronous/asynchronous read behavior
+
+* **Write-Back (WB) Stage**
+
+  * Correct selection between ALU result and memory load data
+  * Generation of write-enable and destination register signals
+  * Clean interface to the register file
+
+#### Defined Pipeline Interfaces
+
+Although not all pipeline stages are fully implemented yet, the data contracts between stages are already clearly defined:
+
+* **EX/MEM Pipeline Register**
+
+  * ALU result
+  * Store data
+  * Destination register index
+  * Load indicator
+
+* **MEM/WB Pipeline Register**
+
+  * Memory read data
+  * ALU result
+  * Destination register index
+  * Write-back control signals
+
+This structured interface design ensures that future features such as hazard detection and forwarding can be integrated without large-scale refactoring.
+
+---
+
+### Design Philosophy
+
+* **Clarity over completeness**
+  A minimal instruction set is used to keep the focus on pipeline behavior.
+
+* **Explicit stage responsibility**
+  Each pipeline stage has a single, well-defined role.
+
+* **FPGA-oriented engineering**
+  Signal ownership, timing behavior, and debuggability are prioritized over feature count.
+
+---
+
+### Stage 2 — Hazard Handling & Performance Analysis
+
+---
 
 ## Pipeline Architecture
 ### Overview
