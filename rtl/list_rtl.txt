@@ -1,0 +1,15 @@
+minirv-pipe/ rtl/ 
+	top.sv 
+	if_stage.sv		accomplished
+	id_stage.sv 	accomplished
+	ex_stage.sv 
+	if_id_reg.sv 	accomplished
+	id_ex_reg.sv 	accomplished
+	regfile.sv 		accomplished
+	alu.sv 
+	instr_rom.sv 	accomplished
+	decode.sv 
+	types.sv 		accomplished
+sim/ tb_
+	top.sv 
+	program.hex

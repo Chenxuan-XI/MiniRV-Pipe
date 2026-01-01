@@ -1,5 +1,6 @@
 module if_stage #(
-    parameter WIDTH = 32
+    parameter WIDTH = 32,
+    parameter DEPTH = 64
 ) (
     input  logic clk,
     input  logic rst_n,
@@ -16,9 +17,10 @@ always_ff @(posedge clk or negedge rst_n) begin
     end
 end
 
-instr_rom rom_pc (
-    .WIDTH(WIDTH)
-    .DEPTH(64)
+instr_rom #(
+    .WIDTH(WIDTH),
+    .DEPTH(DEPTH)
+) rom_pc(
     .addr(pc),
     .instr(instr)
 );

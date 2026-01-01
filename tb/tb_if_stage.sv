@@ -3,9 +3,9 @@
 // Company: 
 // Engineer: 
 // 
-// Create Date: 2025/12/17 18:14:14
+// Create Date: 2025/12/18 18:35:29
 // Design Name: 
-// Module Name: tb_instr_rom
+// Module Name: tb_if_stage
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -19,34 +19,35 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-module tb_instr_rom;
 
-  logic [31:0] addr;
+module tb_if_stage;
+
+  logic [31:0] pc;
   logic [31:0] instr;
+  logic rst_n;
+  logic clk;
 
   // DUT
-  instr_rom #(.WIDTH(32), .DEPTH(64)) dut (
-    .addr(addr),
-    .instr(instr)
+  if_stage #(.WIDTH(32) .DEPTH(64)) dut (
+    .pc(pc),
+    .instr(instr),
+    .clk(clk),
+    .rst_n(rst_n)
   );
 
-  initial begin
-    addr = 32'd0;
-    #10;
+    initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+    end
 
-    addr = 32'd4;
-    #10;
+    initial begin
+    rst_n = 0;
+    #20;
+    rst_n = 1;
 
-    addr = 32'd8;
-    #10;
-
-    addr = 32'd12;
-    #10;
-
-    addr = 32'd256;   // over the range
-    #10;
-
+    #100;
     $stop;
-  end
+    end
+
 
 endmodule
