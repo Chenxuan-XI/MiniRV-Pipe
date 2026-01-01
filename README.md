@@ -2,6 +2,10 @@
 A lightweight instruction-driven FPGA pipeline inspired by RISC-V
 ## Project Motivation
 
+## Project Development Stage
+### monolithic CPU
+First stage of this project
+
 ## Pipeline Architecture
 ### Overview
 
