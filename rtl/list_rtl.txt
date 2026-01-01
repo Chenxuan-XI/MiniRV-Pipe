@@ -1,15 +1,21 @@
 minirv-pipe/ rtl/ 
 	top.sv 
-	if_stage.sv		accomplished
-	id_stage.sv 	accomplished
-	ex_stage.sv 
-	if_id_reg.sv 	accomplished
-	id_ex_reg.sv 	accomplished
-	regfile.sv 		accomplished
+	if_stage.sv		 accomplished
+	id_stage.sv 	 accomplished
+	ex_stage.sv 	 accomplished
+	if_id_reg.sv 	 accomplished
+	id_ex_reg.sv 	 accomplished
+	regfile.sv 		 accomplished
 	alu.sv 
-	instr_rom.sv 	accomplished
+	instr_rom.sv 	 accomplished
 	decode.sv 
-	types.sv 		accomplished
+	types.sv 		 accomplished
+	ex_mem_reg.sv	 accomplished
+	mem_stage.sv	 accomplished
+	mem_wb_reg.sv accomplished
+	wb_stage.sv
+	data_mem.sv
+	cpu_top.sv
 sim/ tb_
 	top.sv 
 	program.hex
