@@ -61,10 +61,6 @@ The focus is on **clean modular boundaries, explicit pipeline registers, and cor
   * Generation of write-enable and destination register signals
   * Clean interface to the register file
 
-#### Defined Pipeline Interfaces
-
-Although not all pipeline stages are fully implemented yet, the data contracts between stages are already clearly defined:
-
 * **EX/MEM Pipeline Register**
 
   * ALU result
