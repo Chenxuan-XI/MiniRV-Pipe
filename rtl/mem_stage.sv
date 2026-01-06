@@ -28,6 +28,7 @@ module mem_stage #(
     input  logic [4:0]       rd_in,
     input  logic             is_load_in,
     input  logic             is_store_in,
+    input  logic             reg_write_in,
 
     input  logic [WIDTH-1:0] mem_rdata,   // read from data_mem
 
@@ -37,7 +38,9 @@ module mem_stage #(
 
     output logic [WIDTH-1:0] mem_data_out, // to WB
     output logic [WIDTH-1:0] alu_res_out,  // to WB
-    output logic [4:0]       rd_out
+    output logic             reg_write_out,
+    output logic [4:0]       rd_out,
+    output logic             is_load_out
 );
 
 always_comb begin
@@ -45,9 +48,11 @@ always_comb begin
     mem_wdata = '0;
     mem_we = 1'b0;
     mem_data_out = '0;
-    
+
+    reg_write_out = reg_write_in;
     rd_out = rd_in;
     alu_res_out = alu_res_in;
+    is_load_out = is_load_in;
 
     if(is_load_in) begin
         mem_data_out = mem_rdata;

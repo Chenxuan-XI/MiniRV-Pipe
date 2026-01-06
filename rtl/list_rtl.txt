@@ -13,9 +13,9 @@ minirv-pipe/ rtl/
 	ex_mem_reg.sv	 accomplished
 	mem_stage.sv	 accomplished
 	mem_wb_reg.sv accomplished
-	wb_stage.sv
-	data_mem.sv
-	cpu_top.sv
+	wb_stage.sv	 accomplished
+	data_mem.sv	 accomplished
+	cpu_top.sv		 accomplished
 sim/ tb_
 	top.sv 
 	program.hex

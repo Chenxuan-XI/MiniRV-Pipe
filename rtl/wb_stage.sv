@@ -26,6 +26,7 @@ module wb_stage #(
     input  logic [WIDTH-1:0] alu_res_in,
     input  logic [4:0]       rd_in,
     input  logic             is_load_in,
+    input  logic             reg_write_in,
 
     output logic             wb_we,
     output logic [4:0]       wb_rd,
@@ -37,13 +38,14 @@ always_comb begin
     wb_we    = 1'b0;
     wb_rd    = rd_in;
     wb_wdata = '0;
-
-    if (is_load_in) begin
-        wb_we    = 1'b1;
-        wb_wdata = mem_data_in;
-    end else if (rd_in != 5'd0) begin
-        wb_we    = 1'b1;
-        wb_wdata = alu_res_in;
+    if(reg_write_in) begin
+        if (is_load_in) begin
+            wb_we    = 1'b1;
+            wb_wdata = mem_data_in;
+        end else if (rd_in != 5'd0) begin
+            wb_we    = 1'b1;
+            wb_wdata = alu_res_in;
+        end
     end
 end
 

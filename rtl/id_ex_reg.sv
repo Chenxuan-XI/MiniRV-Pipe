@@ -31,6 +31,13 @@ module id_ex_reg(
     input  logic [WIDTH-1:0] rs2_val_in,
     input  logic [WIDTH-1:0] imm_in,
 
+    //control signals
+    input logic        is_load_in,
+    input logic        is_store_in,
+    input logic        reg_write_in,
+    input logic        alu_src_imm_in,
+    input logic [2:0]  alu_op_in,
+
     input  logic clk,
     input  logic rst_n,
 
@@ -39,7 +46,13 @@ module id_ex_reg(
     output logic [4:0]       rd_out,
     output logic [WIDTH-1:0] rs1_val_out,
     output logic [WIDTH-1:0] rs2_val_out,
-    output logic [WIDTH-1:0] imm_out
+    output logic [WIDTH-1:0] imm_out,
+
+    output logic        is_load_out,
+    output logic        is_store_out,
+    output logic        reg_write_out,
+    output logic        alu_src_imm_out,  // 1: use imm, 0: use rs2
+    output logic [2:0]  alu_op_out
 );
 
 always_ff @(posedge clk or negedge rst_n) begin
@@ -50,6 +63,11 @@ always_ff @(posedge clk or negedge rst_n) begin
         rs1_val_out <= '0;
         rs2_val_out <= '0;
         imm_out <= '0;
+        is_load_out <= '0;
+        is_store_out <= '0;
+        reg_write_out <= '0;
+        alu_src_imm_out <= '0;
+        alu_op_out <= '0;
     end else begin
         pc_out <= pc_in;
         opcode_out <= opcode_in;
@@ -57,6 +75,11 @@ always_ff @(posedge clk or negedge rst_n) begin
         rs1_val_out <= rs1_val_in;
         rs2_val_out <= rs2_val_in;
         imm_out <= imm_in;
+        is_load_out <= is_load_in;
+        is_store_out <= is_store_in;
+        reg_write_out <= reg_write_in;
+        alu_src_imm_out <= alu_src_imm_in;
+        alu_op_out <= alu_op_in;
     end     
 
 end
