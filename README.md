@@ -187,6 +187,7 @@ To validate the datapath correctness, **NOPs were inserted** between `ADDI` and 
 
 After inserting NOPs:
 
+```text
 Time    PC        WB_WE  WB_RD  WB_WDATA
 --------------------------------------
 0       00000000  0      0      00000000
@@ -201,7 +202,7 @@ Time    PC        WB_WE  WB_RD  WB_WDATA
 135000  00000024  0      0      00000000
 145000  00000028  1      3      00000007
 155000  0000002c  0      x      00000000
-
+```
 
 ---
 
