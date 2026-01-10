@@ -248,6 +248,7 @@ Complex control logic (branches, exceptions) is intentionally omitted.
 
 For NOP operation, it is first implemmented as an architectural NOP instead of an explicit opcode NOP. 
 NOPs are currently implemented as ADD x0, x0, x0, which has no architectural side effects.
+
 ··· verilog
 ADDI x0, x0, 0 //equivalent to NOP
 ```
