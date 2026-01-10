@@ -206,12 +206,25 @@ Time    PC        WB_WE  WB_RD  WB_WDATA
 
 ---
 
-### Stage 3 — Hazard Handling & Performance (Planned)
+### Stage 3 — Hazard Handling & Performance
 
 * Data hazard detection
 * Forwarding paths (EX/MEM, MEM/WB)
 * Load-use hazard handling
 * Basic performance analysis (CPI, stall impact)
+
+#### Bypass in Regfile
+
+For the aynchronous read in the register file: 
+
+```verilog
+    always_comb begin
+        rdata1 = (raddr1 == 5'd0) ? '0 : regfile[raddr1];
+        rdata2 = (raddr2 == 5'd0) ? '0 : regfile[raddr2];
+        if (we && (waddr != 5'd0) && (waddr == raddr1)) rdata1 = wdata; //bypass in the same cycle, the first layor of forwarding
+        if (we && (waddr != 5'd0) && (waddr == raddr2)) rdata2 = wdata;
+    end
+```
 
 ---
 
