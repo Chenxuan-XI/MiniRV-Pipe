@@ -240,10 +240,17 @@ Complex control logic (branches, exceptions) is intentionally omitted.
 | Instruction | Type | Description          |
 | ----------- | ---- | -------------------- |
 | ADD         | R    | rd = rs1 + rs2       |
+| ADDI        | I    | rd = rs1 + imm       |
 | SUB         | R    | rd = rs1 - rs2       |
 | AND         | R    | rd = rs1 & rs2       |
 | LOAD        | I    | rd = MEM[rs1 + imm]  |
 | STORE       | S    | MEM[rs1 + imm] = rs2 |
+
+For NOP operation, it is first implemmented as an architectural NOP instead of an explicit opcode NOP. 
+NOPs are currently implemented as ADD x0, x0, x0, which has no architectural side effects.
+··· verilog
+ADDI x0, x0, 0 //equivalent to NOP
+```
 
 ---
 
