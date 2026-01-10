@@ -115,8 +115,6 @@ mem[3] = 32'h8180_0008;
 > Data memory is **byte-addressed** and internally implemented as a **word array**
 > (`mem[addr[9:2]]`), therefore accessing `MEM[2]` requires `addr = 8`.
 
----
-
 #### Observed Behavior
 
 * `ADDI x2` correctly writes back `x2 = 7`
@@ -129,9 +127,7 @@ Debug output from data memory:
 DMEM WRITE: addr=2 data=0
 ```
 
----
-
-### Root Cause: RAW Hazard
+#### Root Cause: RAW Hazard
 
 Instruction sequence:
 
@@ -150,8 +146,6 @@ As a result, `STORE` reads the old value of `x2` (`0`), which leads to incorrect
 
 This is a **classic Read-After-Write (RAW) hazard**, not a functional bug.
 
----
-
 #### Debugging Method
 
 The issue was located by adding `$display` statements at key stages:
@@ -160,8 +154,6 @@ The issue was located by adding `$display` statements at key stages:
 * **Data memory**: to confirm actual write address and data
 
 This confirmed that the address path was correct, while the stored data was stale.
-
----
 
 #### Temporary Solution
 
