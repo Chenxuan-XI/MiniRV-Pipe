@@ -92,11 +92,102 @@ Focus areas:
   * ALU vs memory data selection
   * Register write-enable generation
 
-This structure allows hazard handling and forwarding to be added **without refactoring the core pipeline**.
+---
+
+## Stage 2 - LOAD / STORE Pipeline Test & RAW Hazard
+
+### Test Program
+
+```verilog
+// ADD  x1, x0, x0   ; x1 = 0
+mem[0] = 32'h0080_0000;
+
+// ADDI x2, x1, 7    ; x2 = 7
+mem[1] = 32'h3104_0007;
+
+// STORE x2 -> MEM[2]  (byte address = 8)
+mem[2] = 32'h9000_4008;
+
+// LOAD x3 <- MEM[2]
+mem[3] = 32'h8180_0008;
+```
+
+> Data memory is **byte-addressed** and internally implemented as a **word array**
+> (`mem[addr[9:2]]`), therefore accessing `MEM[2]` requires `addr = 8`.
 
 ---
 
-### Stage 2 — Hazard Handling & Performance (Planned)
+### Observed Behavior
+
+* `ADDI x2` correctly writes back `x2 = 7`
+* `STORE` writes to the correct memory address
+* `LOAD x3` reads back `0` instead of `7`
+
+Debug output from data memory:
+
+```
+DMEM WRITE: addr=2 data=0
+```
+
+---
+
+### Root Cause: RAW Hazard
+
+Instruction sequence:
+
+```
+ADDI  x2, x1, 7
+STORE x2, [addr]
+```
+
+In the current 5-stage pipeline (IF → ID → EX → MEM → WB):
+
+* `ADDI` writes back in the **WB stage**
+* `STORE` reads `rs2` in the **ID stage**
+* No forwarding or hazard detection is implemented
+
+As a result, `STORE` reads the old value of `x2` (`0`), which leads to incorrect memory data.
+
+This is a **classic Read-After-Write (RAW) hazard**, not a functional bug.
+
+---
+
+### Debugging Method
+
+The issue was located by adding `$display` statements at key stages:
+
+* **ID stage**: to observe `rs2_val` during `STORE`
+* **Data memory**: to confirm actual write address and data
+
+This confirmed that the address path was correct, while the stored data was stale.
+
+---
+
+### Temporary Solution
+
+To validate the datapath correctness, **NOPs were inserted** between `ADDI` and `STORE`:
+
+```verilog
+// ADDI x2, x1, 7
+mem[1] = 32'h3104_0007;
+
+// NOPs
+mem[2] = 32'h0000_0000;
+mem[3] = 32'h0000_0000;
+
+// STORE / LOAD
+mem[4] = 32'h9000_4008;
+mem[5] = 32'h8180_0008;
+```
+
+After inserting NOPs:
+
+* `STORE` writes `data = 7`
+* `LOAD x3` correctly reads back `7`
+
+---
+
+### Stage 3 — Hazard Handling & Performance (Planned)
 
 * Data hazard detection
 * Forwarding paths (EX/MEM, MEM/WB)
