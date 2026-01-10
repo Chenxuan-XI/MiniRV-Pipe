@@ -226,6 +226,10 @@ For the aynchronous read in the register file:
     end
 ```
 
+A write-through bypass was added to the register file to resolve same-cycle WB→ID RAW hazards.
+This reduces the required separation between dependent instructions from 3 NOPs to 2 NOPs.
+Two NOPs are still required due to the absence of EX-stage forwarding and hazard detection.
+
 ---
 
 ## Pipeline Architecture
