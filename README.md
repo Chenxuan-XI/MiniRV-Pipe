@@ -94,9 +94,9 @@ Focus areas:
 
 ---
 
-## Stage 2 - LOAD / STORE Pipeline Test & RAW Hazard
+### Stage 2 - LOAD / STORE Pipeline Test & RAW Hazard
 
-### Test Program
+#### Test Program
 
 ```verilog
 // ADD  x1, x0, x0   ; x1 = 0
@@ -117,7 +117,7 @@ mem[3] = 32'h8180_0008;
 
 ---
 
-### Observed Behavior
+#### Observed Behavior
 
 * `ADDI x2` correctly writes back `x2 = 7`
 * `STORE` writes to the correct memory address
@@ -152,7 +152,7 @@ This is a **classic Read-After-Write (RAW) hazard**, not a functional bug.
 
 ---
 
-### Debugging Method
+#### Debugging Method
 
 The issue was located by adding `$display` statements at key stages:
 
@@ -163,7 +163,7 @@ This confirmed that the address path was correct, while the stored data was stal
 
 ---
 
-### Temporary Solution
+#### Temporary Solution
 
 To validate the datapath correctness, **NOPs were inserted** between `ADDI` and `STORE`:
 
