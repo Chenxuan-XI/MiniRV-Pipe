@@ -160,22 +160,48 @@ This confirmed that the address path was correct, while the stored data was stal
 To validate the datapath correctness, **NOPs were inserted** between `ADDI` and `STORE`:
 
 ```verilog
-// ADDI x2, x1, 7
-mem[1] = 32'h3104_0007;
+    initial begin
+        wait(rst_n == 1);
 
-// NOPs
-mem[2] = 32'h0000_0000;
-mem[3] = 32'h0000_0000;
+        // ADD x1, x0, x0   ; x1 = 0
+        dut.u_if.rom_pc.mem[0] = 32'h0080_0000;
 
-// STORE / LOAD
-mem[4] = 32'h9000_4008;
-mem[5] = 32'h8180_0008;
+        // ADD x2, x1, 7    ; x1 = 0
+        dut.u_if.rom_pc.mem[1] = 32'h3104_0007;
+
+        // NOP
+        dut.u_if.rom_pc.mem[2] = 32'h0000_0000;
+        dut.u_if.rom_pc.mem[3] = 32'h0000_0000;
+        dut.u_if.rom_pc.mem[4] = 32'h0000_0000;
+
+        // STORE x2 -> MEM[2] (mem[i] ← address = i * 4)
+        dut.u_if.rom_pc.mem[5] = 32'h9000_4008;
+
+        // LOAD x3 <- MEM[2]
+        dut.u_if.rom_pc.mem[6] = 32'h8180_0008;
+
+        $display("[TB] Instruction memory initialized");
+
+    end
 ```
 
 After inserting NOPs:
 
-* `STORE` writes `data = 7`
-* `LOAD x3` correctly reads back `7`
+Time    PC        WB_WE  WB_RD  WB_WDATA
+--------------------------------------
+0       00000000  0      0      00000000
+55000   00000004  0      0      00000000
+65000   00000008  0      0      00000000
+75000   0000000c  0      0      00000000
+85000   00000010  1      1      00000000
+95000   00000014  1      2      00000007
+105000  00000018  0      0      00000000
+115000  0000001c  0      0      00000000
+125000  00000020  0      0      00000000
+135000  00000024  0      0      00000000
+145000  00000028  1      3      00000007
+155000  0000002c  0      x      00000000
+
 
 ---
 
