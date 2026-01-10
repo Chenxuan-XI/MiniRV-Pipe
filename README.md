@@ -47,7 +47,7 @@ A non-pipelined CPU used to understand the full instruction execution flow:
 
 ---
 
-### Stage 1 — Pipelined Implementation (Current)
+### Stage 1 — Pipelined Implementation
 
 Transition to a **5-stage RISC-V–inspired pipeline**:
 
