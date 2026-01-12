@@ -24,6 +24,7 @@ package minirv_types;
     OP_ADD   = 4'h0,
     OP_SUB   = 4'h1,
     OP_AND   = 4'h2,
+    OP_ADDI  = 4'h3,
     OP_LOAD  = 4'h8,
     OP_STORE = 4'h9
   } opcode_t;

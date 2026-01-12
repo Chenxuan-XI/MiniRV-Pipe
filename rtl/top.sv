@@ -33,10 +33,14 @@ module top (
     // ========================
     logic [31:0] pc_if;
     logic [31:0] instr_if;
+    logic [4:0]  rs1_if;
+    logic [4:0]  rs2_if;
 
     // IF/ID
     logic [31:0] pc_id;
     logic [31:0] instr_id;
+    logic [4:0]  rs1_if_reg;
+    logic [4:0]  rs2_if_reg;
 
     // ========================
     // ID stage signals
@@ -46,6 +50,8 @@ module top (
     logic [31:0] rs1_val_id;
     logic [31:0] rs2_val_id;
     logic [31:0] imm_id;
+    logic [4:0]  rs1_id;
+    logic [4:0]  rs2_id;
 
     logic        is_load_id;
     logic        is_store_id;
@@ -63,6 +69,8 @@ module top (
     logic [31:0] rs1_val_ex;
     logic [31:0] rs2_val_ex;
     logic [31:0] imm_ex;
+    logic [4:0] rs1_id_reg;
+    logic [4:0] rs2_id_reg;
 
     logic        is_load_ex;
     logic        is_store_ex;
@@ -126,22 +134,40 @@ module top (
     logic [31:0] wb_wdata;
 
     // ========================
+    // Hazard Stage
+    // ========================
+    logic        load_use_hazard;
+    logic        id_ex_flush;
+    logic        pc_write;
+    logic        ifid_write;
+
+    // ========================
     // IF stage
     // ========================
     if_stage u_if (
         .clk      (clk),
         .rst_n    (rst_n),
-        .pc_out   (pc_if),
-        .instr_out(instr_if)
+        .pc       (pc_if),
+        .instr    (instr_if),
+        .pc_en    (pc_write),
+        .rs1      (rs1_if),
+        .rs2      (rs2_if)
     );
 
     if_id_reg u_if_id (
         .clk      (clk),
         .rst_n    (rst_n),
+        .en       (ifid_write),
+
         .pc_in    (pc_if),
         .instr_in (instr_if),
+        .rs1_in   (rs1_if),
+        .rs2_in   (rs2_if),
+
         .pc_out   (pc_id),
-        .instr_out(instr_id)
+        .instr_out(instr_id),
+        .rs1_out  (rs1_if_reg),
+        .rs2_out  (rs2_if_reg)
     );
 
     // ========================
@@ -162,6 +188,9 @@ module top (
         .rs1_val    (rs1_val_id),
         .rs2_val    (rs2_val_id),
         .imm        (imm_id),
+        .rs1d   (rs1_id),
+        .rs2d   (rs2_id),
+
 
         .is_load    (is_load_id),
         .is_store   (is_store_id),
@@ -174,6 +203,7 @@ module top (
     id_ex_reg u_id_ex (
         .clk            (clk),
         .rst_n          (rst_n),
+        .flush          (id_ex_flush),
 
         .pc_in          (pc_id_reg),
         .rd_in          (rd_id),
@@ -181,6 +211,8 @@ module top (
         .rs2_val_in     (rs2_val_id),
         .imm_in         (imm_id),
         .opcode_in      (opcode_id),
+        .rs1_in         (rs1_id),
+        .rs2_in         (rs2_id),
 
         .is_load_in     (is_load_id),
         .is_store_in    (is_store_id),
@@ -194,12 +226,28 @@ module top (
         .rs2_val_out    (rs2_val_ex),
         .imm_out        (imm_ex),
         .opcode_out     (opcode_ex),
+        .rs1_out        (rs1_id_reg),
+        .rs2_out        (rs2_id_reg),
 
         .is_load_out    (is_load_ex),
         .is_store_out   (is_store_ex),
         .reg_write_out  (reg_write_ex),
         .alu_src_imm_out(alu_src_imm_ex),
         .alu_op_out     (alu_op_ex)
+    );
+
+    // ========================
+    // Hazard Unit
+    // ========================
+    hazard_unit u_ha (
+        .is_load        (is_load_ex),
+        .rd             (rd_ex),
+        .rs1            (rs1_if_reg),
+        .rs2            (rs2_if_reg),
+        .load_use_hazard(load_use_hazard),
+        .id_ex_flush    (id_ex_flush),
+        .pc_write       (pc_write),
+        .ifid_write     (ifid_write)
     );
 
     // ========================
@@ -218,6 +266,15 @@ module top (
         .reg_write_in   (reg_write_ex),
         .alu_src_imm    (alu_src_imm_ex),
         .alu_op         (alu_op_ex),
+        .rs1_idx_in     (rs1_id_reg),
+        .rs2_idx_in     (rs2_id_reg),
+        .exmem_alu_res  (alu_res_mem),
+        .exmem_rd       (rd_mem),
+        .exmem_reg_write (reg_write_mem),
+        .memwb_rd       (rd_wb_reg),
+        .memwb_reg_write (reg_write_wb_reg),
+        .memwb_wdata    (wb_wdata),
+
 
         .alu_res        (alu_res_ex),
         .store_data     (store_data_ex),
@@ -311,6 +368,19 @@ module top (
     // Simple demo output
     // ========================
     assign led = pc_if[7:0];
+    always @(posedge clk) begin
+        if (load_use_hazard)
+            $display("STALL @ PC=%h", pc_if);
+    end
+    always_ff @(posedge clk) begin
+        $display("T=%0t PC=%h | HAZ=%b | EX: rd=%0d regW=%b isLd=%b | MEM: rd=%0d regW=%b isLd=%b | WB: rd=%0d regW=%b isLd=%b wdata=%h",
+            $time, pc_if, load_use_hazard,
+            rd_ex_reg, reg_write_ex_reg, is_load_ex_reg,
+            rd_mem,    reg_write_mem,    is_load_mem,
+            rd_wb_reg, reg_write_wb_reg, is_load_wb_reg, wb_wdata
+        );
+    end
+
 
 endmodule
 

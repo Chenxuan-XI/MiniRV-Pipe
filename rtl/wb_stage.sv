@@ -31,23 +31,19 @@ module wb_stage #(
     output logic             wb_we,
     output logic [4:0]       wb_rd,
     output logic [WIDTH-1:0] wb_wdata
-);
-
+); 
 
 always_comb begin
-    wb_we    = 1'b0;
-    wb_rd    = rd_in;
-    wb_wdata = '0;
-    if(reg_write_in) begin
-        if (is_load_in) begin
-            wb_we    = 1'b1;
-            wb_wdata = mem_data_in;
-        end else if (rd_in != 5'd0) begin
-            wb_we    = 1'b1;
-            wb_wdata = alu_res_in;
-        end
+    wb_rd = rd_in;
+    if (reg_write_in && (rd_in != 0)) begin
+        wb_we = 1'b1;
+        wb_wdata = is_load_in ? mem_data_in : alu_res_in;
+    end else begin
+        wb_we = 1'b0;
+        wb_wdata = '0;
     end
 end
+
 
 
 endmodule

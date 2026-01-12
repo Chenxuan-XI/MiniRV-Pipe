@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module RegFile #(
+module regfile #(
     parameter WIDTH = 32,
     parameter DEPTH = 32,
     parameter READ_ASYNC = 1
@@ -38,8 +38,8 @@ if (READ_ASYNC) begin : gen_async_read
     always_comb begin
         rdata1 = (raddr1 == 5'd0) ? '0 : regfile[raddr1];
         rdata2 = (raddr2 == 5'd0) ? '0 : regfile[raddr2];
-        // if (we && (waddr != 5'd0) && (waddr == raddr1)) rdata1 = wdata;
-        // if (we && (waddr != 5'd0) && (waddr == raddr2)) rdata2 = wdata;
+        if (we && (waddr != 5'd0) && (waddr == raddr1)) rdata1 = wdata; //bypass in the same cycle, the first layor of forwarding
+        if (we && (waddr != 5'd0) && (waddr == raddr2)) rdata2 = wdata;
     end
 end else begin : gen_sync_read
     // Synchronous Read

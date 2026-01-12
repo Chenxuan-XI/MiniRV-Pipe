@@ -42,6 +42,13 @@ module data_memory #(
         end
     end
 
+    always_ff @(posedge clk) begin
+        if (we) begin
+            $display("DMEM WRITE: addr=%0d data=%0d",addr[9:2], wdata);
+            mem[addr[9:2]] <= wdata;
+        end
+    end
+
     // read: asynchronous (simplest)
     assign rdata = mem[addr[9:2]];
 
