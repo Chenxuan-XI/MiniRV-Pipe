@@ -32,6 +32,17 @@ with hazards, forwarding, and performance analysis.
 
 ---
 
+## Frozen Baseline
+
+The current pipeline is frozen as a correctness baseline.
+It implements a hazard-aware 5-stage in-order processor with
+EX/MEM forwarding and load-use stall handling.
+
+All subsequent work builds on this version without modifying
+its functional behavior.
+
+---
+
 ## Project Development Stages
 
 ### Stage 0 — Monolithic CPU (Concept Exploration)
