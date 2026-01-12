@@ -269,6 +269,11 @@ Ensures correctness for cases where forwarding alone is insufficient.
   * `x0` as source/destination edge cases
 * Waveform inspection and cycle-by-cycle logging were used to confirm correctness.
 
+#### 6. Summary
+Full forwarding was intentionally avoided to keep the pipeline simple and verifiable.
+For load-use dependencies, data is not available until after MEM, making a single-cycle stall unavoidable.
+The design therefore forwards where possible and stalls only where correctness fundamentally requires it.
+
 ---
 
 ## Pipeline Architecture
