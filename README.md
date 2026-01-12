@@ -206,14 +206,13 @@ Time    PC        WB_WE  WB_RD  WB_WDATA
 
 ---
 
-### Stage 3 — Hazard Handling & Performance
+### Stage 3 — Hazard Handling
 
-* Data hazard detection
-* Forwarding paths (EX/MEM, MEM/WB)
-* Load-use hazard handling
-* Basic performance analysis (CPI, stall impact)
+In this stage, the pipeline was extended from a functionally correct baseline to a hazard-aware pipeline, ensuring correct execution under instruction overlap.
 
-#### Bypass in Regfile
+The following hazards were identified and addressed:
+
+#### 1. Data Hazards (Read-After-Write)
 
 For the aynchronous read in the register file: 
 
@@ -229,6 +228,46 @@ For the aynchronous read in the register file:
 A write-through bypass was added to the register file to resolve same-cycle WB→ID RAW hazards.
 This reduces the required separation between dependent instructions from 3 NOPs to 2 NOPs.
 Two NOPs are still required due to the absence of EX-stage forwarding and hazard detection.
+
+#### 2. Pipeline Forwarding (EX / MEM → EX)
+* Forwarding paths were added to the EX stage to resolve data hazards without stalling:
+
+  * EX/MEM → EX
+  * MEM/WB → EX
+* Forwarding selection logic prioritizes the **youngest valid result**.
+* Special care was taken to preserve architectural correctness of `x0` (hard-wired zero).
+
+**Effect:**
+Most ALU-to-ALU dependencies execute without stalls.
+
+#### 3. Load-Use Hazard Detection (Stall Insertion)
+* A hazard detection unit was introduced to detect **load-use hazards**:
+
+  * When an instruction in EX is a load
+  * And the following instruction depends on its destination register
+* In this case, the pipeline inserts **a single stall (bubble)**:
+
+  * IF and ID are frozen
+  * A NOP is injected into EX
+
+**Effect:**
+Ensures correctness for cases where forwarding alone is insufficient.
+
+#### 4. Structural & Control Simplifications
+* The pipeline currently assumes:
+
+  * Single-issue, in-order execution
+  * No branch or jump instructions (control hazards deferred)
+* This keeps the hazard logic focused and verifiable.
+
+#### 5. Verification
+
+* Each hazard mechanism was validated using **minimal directed test programs**, including:
+
+  * Back-to-back ALU dependencies
+  * Load followed by dependent ALU instruction
+  * `x0` as source/destination edge cases
+* Waveform inspection and cycle-by-cycle logging were used to confirm correctness.
 
 ---
 
@@ -311,3 +350,4 @@ All instructions use a fixed 32-bit encoding:
 * Ignored for R-type instructions
 * Used for address calculation in LOAD/STORE
 
+---
