@@ -367,3 +367,74 @@ All instructions use a fixed 32-bit encoding:
 * Used for address calculation in LOAD/STORE
 
 ---
+
+## Timing Closure & Performance Metrics
+
+This section summarizes the timing closure results and architectural performance metrics of the current **baseline pipelined CPU implementation**, evaluated on a **Xilinx Zynq-7010 (xa7z010)** FPGA.
+
+---
+
+### Clock Configuration
+
+* **Clock name**: `clk`
+* **Target frequency**: 100 MHz
+* **Clock period**: 10.0 ns
+* **Constraint**:
+
+  ```tcl
+  create_clock -name clk -period 10.0 [get_ports clk]
+  ```
+
+Asynchronous reset and LED outputs are excluded from timing analysis:
+
+```tcl
+set_false_path -from [get_ports rst_n]
+set_false_path -to   [get_ports {led[*]}]
+```
+
+---
+
+### Timing Summary (Post-Route)
+
+| Metric                         | Value                 | Interpretation                                      |
+| ------------------------------ | --------------------- | --------------------------------------------------- |
+| **WNS** (Worst Negative Slack) | **+7.904 ns**         | Large setup margin; design comfortably meets timing |
+| **TNS** (Total Negative Slack) | **0.000 ns**          | No setup violations                                 |
+| **WHS** (Worst Hold Slack)     | **+0.264 ns**         | Hold timing satisfied with positive margin          |
+| **Status**                     | ✅ All constraints met | Clean timing closure                                |
+
+> **Conclusion**:
+> The design meets timing comfortably at **100 MHz**, with significant margin for higher operating frequencies.
+
+---
+
+### Critical Path Analysis
+
+* **Path type**: Register → Register (intra-clock)
+* **Pipeline stage**: IF stage (PC increment logic)
+* **Source / Destination**:
+  `u_if/pc_reg[*] → u_if/pc_reg[*]`
+* **Logic structure**:
+
+  * Carry-chain based increment (`CARRY4`)
+  * Logic depth: 2
+* **Data path delay**: ~2.1 ns
+
+> The critical path resides in the **PC + 4 increment logic** and is efficiently mapped to FPGA carry chains.
+> No ALU, hazard, or forwarding logic currently lies on the critical timing path, indicating a healthy baseline pipeline structure.
+
+---
+
+### Hold Timing Observation
+
+The worst hold slack is **+0.264 ns**, originating from short carry-to-register paths in the IF stage.
+
+* Hold timing **passes**
+* No corrective action required at this stage
+* Typical and acceptable for FPGA carry-chain designs
+
+---
+
+### Mamimum Frequency Test
+
+---
