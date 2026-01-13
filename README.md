@@ -1,7 +1,7 @@
 # MiniRV-Pipe
 
 **A Lightweight Instruction-Driven FPGA Pipeline (RISC-V Inspired)**
-
+This project is complete and archived as a timing-verified baseline pipeline.
 ---
 
 ## Overview
@@ -487,3 +487,5 @@ This evidence-driven approach ensures that future optimizations (e.g. forwarding
 > Fmax is primarily limited by IF-stage PC increment logic and clocking constraints, validating the choice of a minimal, timing-friendly micro-architecture as a stable starting point for further exploration.
 
 ---
+
+This project prioritizes architectural clarity and timing awareness over feature completeness, and serves as a reference baseline for future high-frequency RTL exploration.
