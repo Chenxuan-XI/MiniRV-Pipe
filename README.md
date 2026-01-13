@@ -1,7 +1,7 @@
 # MiniRV-Pipe
 
 **A Lightweight Instruction-Driven FPGA Pipeline (RISC-V Inspired)**
-
+This project is complete and archived as a timing-verified baseline pipeline.
 ---
 
 ## Overview
@@ -29,6 +29,17 @@ with hazards, forwarding, and performance analysis.
 
 * **FPGA-oriented design**
   Timing behavior, signal ownership, and debuggability are prioritized.
+
+---
+
+## Frozen Baseline
+
+The current pipeline is frozen as a correctness baseline.
+It implements a hazard-aware 5-stage in-order processor with
+EX/MEM forwarding and load-use stall handling.
+
+All subsequent work builds on this version without modifying
+its functional behavior.
 
 ---
 
@@ -206,14 +217,13 @@ Time    PC        WB_WE  WB_RD  WB_WDATA
 
 ---
 
-### Stage 3 — Hazard Handling & Performance
+### Stage 3 — Hazard Handling
 
-* Data hazard detection
-* Forwarding paths (EX/MEM, MEM/WB)
-* Load-use hazard handling
-* Basic performance analysis (CPI, stall impact)
+In this stage, the pipeline was extended from a functionally correct baseline to a hazard-aware pipeline, ensuring correct execution under instruction overlap.
 
-#### Bypass in Regfile
+The following hazards were identified and addressed:
+
+#### 1. Data Hazards (Read-After-Write)
 
 For the aynchronous read in the register file: 
 
@@ -229,6 +239,51 @@ For the aynchronous read in the register file:
 A write-through bypass was added to the register file to resolve same-cycle WB→ID RAW hazards.
 This reduces the required separation between dependent instructions from 3 NOPs to 2 NOPs.
 Two NOPs are still required due to the absence of EX-stage forwarding and hazard detection.
+
+#### 2. Pipeline Forwarding (EX / MEM → EX)
+* Forwarding paths were added to the EX stage to resolve data hazards without stalling:
+
+  * EX/MEM → EX
+  * MEM/WB → EX
+* Forwarding selection logic prioritizes the **youngest valid result**.
+* Special care was taken to preserve architectural correctness of `x0` (hard-wired zero).
+
+**Effect:**
+Most ALU-to-ALU dependencies execute without stalls.
+
+#### 3. Load-Use Hazard Detection (Stall Insertion)
+* A hazard detection unit was introduced to detect **load-use hazards**:
+
+  * When an instruction in EX is a load
+  * And the following instruction depends on its destination register
+* In this case, the pipeline inserts **a single stall (bubble)**:
+
+  * IF and ID are frozen
+  * A NOP is injected into EX
+
+**Effect:**
+Ensures correctness for cases where forwarding alone is insufficient.
+
+#### 4. Structural & Control Simplifications
+* The pipeline currently assumes:
+
+  * Single-issue, in-order execution
+  * No branch or jump instructions (control hazards deferred)
+* This keeps the hazard logic focused and verifiable.
+
+#### 5. Verification
+
+* Each hazard mechanism was validated using **minimal directed test programs**, including:
+
+  * Back-to-back ALU dependencies
+  * Load followed by dependent ALU instruction
+  * `x0` as source/destination edge cases
+* Waveform inspection and cycle-by-cycle logging were used to confirm correctness.
+
+#### 6. Summary
+Full forwarding was intentionally avoided to keep the pipeline simple and verifiable.
+For load-use dependencies, data is not available until after MEM, making a single-cycle stall unavoidable.
+The design therefore forwards where possible and stalls only where correctness fundamentally requires it.
 
 ---
 
@@ -311,3 +366,126 @@ All instructions use a fixed 32-bit encoding:
 * Ignored for R-type instructions
 * Used for address calculation in LOAD/STORE
 
+---
+
+## Timing Closure & Performance Metrics
+
+This section summarizes the timing closure results and architectural performance metrics of the current **baseline pipelined CPU implementation**, evaluated on a **Xilinx Zynq-7010 (xa7z010)** FPGA.
+
+---
+
+### Clock Configuration
+
+* **Clock name**: `clk`
+* **Target frequency**: 100 MHz
+* **Clock period**: 10.0 ns
+* **Constraint**:
+
+  ```tcl
+  create_clock -name clk -period 10.0 [get_ports clk]
+  ```
+
+Asynchronous reset and LED outputs are excluded from timing analysis:
+
+```tcl
+set_false_path -from [get_ports rst_n]
+set_false_path -to   [get_ports {led[*]}]
+```
+
+---
+
+### Timing Summary (Post-Route)
+
+| Metric                         | Value                 | Interpretation                                      |
+| ------------------------------ | --------------------- | --------------------------------------------------- |
+| **WNS** (Worst Negative Slack) | **+7.904 ns**         | Large setup margin; design comfortably meets timing |
+| **TNS** (Total Negative Slack) | **0.000 ns**          | No setup violations                                 |
+| **WHS** (Worst Hold Slack)     | **+0.264 ns**         | Hold timing satisfied with positive margin          |
+| **Status**                     | ✅ All constraints met | Clean timing closure                                |
+
+> **Conclusion**:
+> The design meets timing comfortably at **100 MHz**, with significant margin for higher operating frequencies.
+
+---
+
+### Hold Timing Observation
+
+The worst hold slack is **+0.264 ns**, originating from short carry-to-register paths in the IF stage.
+
+* Hold timing **passes**
+* No corrective action required at this stage
+* Typical and acceptable for FPGA carry-chain designs
+
+---
+
+### Mamimum Frequency Test
+
+Device: **xa7z010-clg225 (-1I)**  
+Tool: **Vivado 2025.1**  
+Design state: **Routed**  
+Timing focus: **internal clk→clk paths** (I/O excluded via false-path constraints)
+
+| clk period (ns) | Freq (MHz) | WNS (ns) | WHS (ns) | TNS (ns) | Status |
+|---:|---:|---:|---:|---:|:--:|
+| 12.00 | 83.33  | +10.044 | +0.264 | 0.000 | Pass |
+| 10.00 | 100.00 | +7.904  | +0.264 | 0.000 | Pass |
+| 8.00  | 125.00 | +6.044  | +0.264 | 0.000 | Pass |
+| 6.67  | 150.00 | +4.714  | +0.264 | 0.000 | Pass |
+| 5.00  | 200.00 | +3.044  | +0.264 | 0.000 | Pass |
+| 4.00  | 250.00 | +2.044  | +0.264 | 0.000 | Pass |
+| 3.33  | 300.00 | +1.374  | +0.264 | 0.000 | Pass |
+| 2.00  | 500.00 | +0.045  | +0.264 | 0.000 | Pass |
+| 1.90  | 526.32 | -0.055  | +0.264 | -0.550 | Fail |
+| 1.50  | 666.67 | -0.455  | +0.264 | -1.111 | Fail |
+| 1.00  | 1000.0 | -0.955  | +0.264 | -3.504 | Fail |
+
+**Observed Fmax (setup-limited):** between **500 MHz (PASS)** and **666.7 MHz (FAIL)**.  
+**Estimated Fmax (linear interp on WNS):** ~**526 MHz** (period ~**1.95 ns**, where WNS ≈ 0).
+
+While the xa7z010-clg225 (-1I) datasheet specifies a ~464 MHz PL clock limit, post-route timing indicates this design achieves a setup-limited Fmax of approximately 510–525 MHz, exceeding the datasheet guarantee under the tested conditions.
+
+---
+
+## Results & Trade-offs
+
+### Critical Path Analysis
+
+The **maximum reliable operating frequency** of the baseline design is therefore **≈500 MHz**.
+At a target clock period of **1.9 ns**, the worst setup violation (**WNS = −0.055 ns**) occurs on an **intra-clock path within the IF stage**, specifically the **PC update logic**:
+
+* **Path**: `pc_reg → PC increment (CARRY4 ×2) → pc_reg`
+* **Logic depth**: 2 carry-chain levels
+* **Dominant contributor**: combinational delay in PC + 4 / next-PC computation
+
+This indicates that the **IF-stage PC increment datapath**, rather than ALU or memory logic, currently limits Fmax.
+
+In addition, the timing report flags a **clock pulse-width / minimum-period violation at the BUFG**, where the required minimum period (**2.155 ns**) exceeds the applied **1.9 ns** constraint.
+This shows that beyond a certain point, **clocking infrastructure limits**, not just datapath logic, also bound the achievable frequency.
+
+---
+
+### Architectural Trade-offs
+
+These results directly inform the design choices made in the baseline:
+
+* **No full forwarding network**
+  Forwarding logic would introduce additional wide multiplexers and comparisons into critical stages, increasing combinational depth and further reducing timing margin.
+
+* **Conservative hazard handling with stalls**
+  A simpler hazard strategy preserves a shorter critical path and improves timing robustness at high frequency.
+
+* **Baseline freeze before optimization**
+  By freezing a functionally correct pipeline first, timing behavior can be measured and reasoned about quantitatively, rather than guessed.
+
+This evidence-driven approach ensures that future optimizations (e.g. forwarding, branch handling, or PC-path restructuring) can be evaluated **explicitly against frequency impact**, rather than added blindly.
+
+---
+
+### Summary
+
+> The baseline pipeline achieves ~500 MHz on Zynq-7010 with timing closure.
+> Fmax is primarily limited by IF-stage PC increment logic and clocking constraints, validating the choice of a minimal, timing-friendly micro-architecture as a stable starting point for further exploration.
+
+---
+
+This project prioritizes architectural clarity and timing awareness over feature completeness, and serves as a reference baseline for future high-frequency RTL exploration.
