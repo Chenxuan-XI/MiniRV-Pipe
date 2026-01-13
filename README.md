@@ -408,23 +408,6 @@ set_false_path -to   [get_ports {led[*]}]
 
 ---
 
-### Critical Path Analysis
-
-* **Path type**: Register → Register (intra-clock)
-* **Pipeline stage**: IF stage (PC increment logic)
-* **Source / Destination**:
-  `u_if/pc_reg[*] → u_if/pc_reg[*]`
-* **Logic structure**:
-
-  * Carry-chain based increment (`CARRY4`)
-  * Logic depth: 2
-* **Data path delay**: ~2.1 ns
-
-> The critical path resides in the **PC + 4 increment logic** and is efficiently mapped to FPGA carry chains.
-> No ALU, hazard, or forwarding logic currently lies on the critical timing path, indicating a healthy baseline pipeline structure.
-
----
-
 ### Hold Timing Observation
 
 The worst hold slack is **+0.264 ns**, originating from short carry-to-register paths in the IF stage.
@@ -436,5 +419,50 @@ The worst hold slack is **+0.264 ns**, originating from short carry-to-register 
 ---
 
 ### Mamimum Frequency Test
+
+Device: **xa7z010-clg225 (-1I)**  
+Tool: **Vivado 2025.1**  
+Design state: **Routed**  
+Timing focus: **internal clk→clk paths** (I/O excluded via false-path constraints)
+
+| clk period (ns) | Freq (MHz) | WNS (ns) | WHS (ns) | TNS (ns) | Status |
+|---:|---:|---:|---:|---:|:--:|
+| 12.00 | 83.33  | +10.044 | +0.264 | 0.000 | Pass |
+| 10.00 | 100.00 | +7.904  | +0.264 | 0.000 | Pass |
+| 8.00  | 125.00 | +6.044  | +0.264 | 0.000 | Pass |
+| 6.67  | 150.00 | +4.714  | +0.264 | 0.000 | Pass |
+| 5.00  | 200.00 | +3.044  | +0.264 | 0.000 | Pass |
+| 4.00  | 250.00 | +2.044  | +0.264 | 0.000 | Pass |
+| 3.33  | 300.00 | +1.374  | +0.264 | 0.000 | Pass |
+| 2.00  | 500.00 | +0.045  | +0.264 | 0.000 | Pass |
+| 1.90  | 526.32 | -0.055  | +0.264 | -0.550 | Fail |
+| 1.50  | 666.67 | -0.455  | +0.264 | -1.111 | Fail |
+| 1.00  | 1000.0 | -0.955  | +0.264 | -3.504 | Fail |
+
+**Observed Fmax (setup-limited):** between **500 MHz (PASS)** and **666.7 MHz (FAIL)**.  
+**Estimated Fmax (linear interp on WNS):** ~**526 MHz** (period ~**1.95 ns**, where WNS ≈ 0).
+
+While the xa7z010-clg225 (-1I) datasheet specifies a ~464 MHz PL clock limit, post-route timing indicates this design achieves a setup-limited Fmax of approximately 510–525 MHz, exceeding the datasheet guarantee under the tested conditions.
+
+---
+
+### Critical Path Analysis
+
+* **Path type**: Register → Register (intra-clock)
+* **Pipeline stage**: IF stage (PC increment logic)
+* **Source / Destination**:
+  `u_if/pc_reg[*] → u_if/pc_reg[*]`
+* **Logic structure**:
+  
+  * Carry-chain based increment (`CARRY4`)
+  * Logic depth: 2
+* **Data path delay**: ~2.1 ns
+
+> The critical path resides in the **PC + 4 increment logic** and is efficiently mapped to FPGA carry chains.
+> No ALU, hazard, or forwarding logic currently lies on the critical timing path, indicating a healthy baseline pipeline structure.
+
+**Timing sweep + critical-path analysis is the strongest proof of micro-architectural trade-offs.**
+By sweeping the clock period and inspecting the routed timing reports, I can pinpoint *where* performance is lost and *why*. For example, at **1.9 ns (526 MHz)** the design shows **WNS = -0.055 ns** with the worst setup path inside **IF-stage PC update** (FDCE → CARRY4×2 → FDCE), indicating the **PC+4 / next-PC increment chain** dominates the critical path. In addition, the report also flags a **clock pulse-width / min-period limitation at BUFG (required 2.155 ns vs actual 1.900 ns)**, showing that beyond a point the design is constrained not only by datapath delay but also by clocking infrastructure limits.
+This evidence-driven flow makes architectural decisions explicit: *simpler hazard/forwarding logic helps preserve Fmax*, while more aggressive forwarding/control can increase combinational depth and reduce timing margin.
 
 ---
