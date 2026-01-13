@@ -446,23 +446,44 @@ While the xa7z010-clg225 (-1I) datasheet specifies a ~464 MHz PL clock limit, po
 
 ---
 
+## Results & Trade-offs
+
 ### Critical Path Analysis
 
-* **Path type**: Register → Register (intra-clock)
-* **Pipeline stage**: IF stage (PC increment logic)
-* **Source / Destination**:
-  `u_if/pc_reg[*] → u_if/pc_reg[*]`
-* **Logic structure**:
-  
-  * Carry-chain based increment (`CARRY4`)
-  * Logic depth: 2
-* **Data path delay**: ~2.1 ns
+The **maximum reliable operating frequency** of the baseline design is therefore **≈500 MHz**.
+At a target clock period of **1.9 ns**, the worst setup violation (**WNS = −0.055 ns**) occurs on an **intra-clock path within the IF stage**, specifically the **PC update logic**:
 
-> The critical path resides in the **PC + 4 increment logic** and is efficiently mapped to FPGA carry chains.
-> No ALU, hazard, or forwarding logic currently lies on the critical timing path, indicating a healthy baseline pipeline structure.
+* **Path**: `pc_reg → PC increment (CARRY4 ×2) → pc_reg`
+* **Logic depth**: 2 carry-chain levels
+* **Dominant contributor**: combinational delay in PC + 4 / next-PC computation
 
-**Timing sweep + critical-path analysis is the strongest proof of micro-architectural trade-offs.**
-By sweeping the clock period and inspecting the routed timing reports, I can pinpoint *where* performance is lost and *why*. For example, at **1.9 ns (526 MHz)** the design shows **WNS = -0.055 ns** with the worst setup path inside **IF-stage PC update** (FDCE → CARRY4×2 → FDCE), indicating the **PC+4 / next-PC increment chain** dominates the critical path. In addition, the report also flags a **clock pulse-width / min-period limitation at BUFG (required 2.155 ns vs actual 1.900 ns)**, showing that beyond a point the design is constrained not only by datapath delay but also by clocking infrastructure limits.
-This evidence-driven flow makes architectural decisions explicit: *simpler hazard/forwarding logic helps preserve Fmax*, while more aggressive forwarding/control can increase combinational depth and reduce timing margin.
+This indicates that the **IF-stage PC increment datapath**, rather than ALU or memory logic, currently limits Fmax.
+
+In addition, the timing report flags a **clock pulse-width / minimum-period violation at the BUFG**, where the required minimum period (**2.155 ns**) exceeds the applied **1.9 ns** constraint.
+This shows that beyond a certain point, **clocking infrastructure limits**, not just datapath logic, also bound the achievable frequency.
+
+---
+
+### Architectural Trade-offs
+
+These results directly inform the design choices made in the baseline:
+
+* **No full forwarding network**
+  Forwarding logic would introduce additional wide multiplexers and comparisons into critical stages, increasing combinational depth and further reducing timing margin.
+
+* **Conservative hazard handling with stalls**
+  A simpler hazard strategy preserves a shorter critical path and improves timing robustness at high frequency.
+
+* **Baseline freeze before optimization**
+  By freezing a functionally correct pipeline first, timing behavior can be measured and reasoned about quantitatively, rather than guessed.
+
+This evidence-driven approach ensures that future optimizations (e.g. forwarding, branch handling, or PC-path restructuring) can be evaluated **explicitly against frequency impact**, rather than added blindly.
+
+---
+
+### Summary
+
+> The baseline pipeline achieves ~500 MHz on Zynq-7010 with timing closure.
+> Fmax is primarily limited by IF-stage PC increment logic and clocking constraints, validating the choice of a minimal, timing-friendly micro-architecture as a stable starting point for further exploration.
 
 ---
